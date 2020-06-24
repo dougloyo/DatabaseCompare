@@ -1,0 +1,5 @@
+{
+    "Name":"Staff Count",
+    "SrcSQL":"SELECT Count(*) StaffCount FROM edfi.Staff;",
+    "DestSQL":"SELECT Count(*) StaffCount FROM edfi.Staff;"
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Comparrison</title>
+
+    <!-- <link rel="stylesheet" href="css/main.css" /> -->
+    <!-- <link rel="icon" href="images/favicon.png" /> -->
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
+    <style>
+        body { 
+          background-color:#e0e0e0;
+          font-family: 'Poppins', sans-serif;
+          padding: 10px;
+        }
+        
+        table {
+          border-collapse:collapse;
+          border:1px solid #000;
+        }
+
+        table th, td {
+          border:1px solid #000;
+          padding: 5px;
+        }
+    </style>
+  </head>
+
+  <body>
+    <h1>Data Comparrison</h1>
+    <table id="resultsTable">
+    </table>
+    <!-- <script src="js/scripts.js"></script> -->
+    <script>
+
+      const resultsTable = document.getElementById('resultsTable');
+
+      fetch('/api/execute')
+        .then(data=>data.json())
+        .then(jsonData=>populate(jsonData))
+        .catch(e=>{ console.log(e); });
+
+      function append(parent, child) { 
+        parent.appendChild(child); 
+        return parent;
+      };
+
+      function dom(tag, text) {
+        let r = document.createElement(tag);
+        if (text) r.innerText = text;
+        return r;
+      };
+
+      function populate(json)
+      {
+        console.log(json);
+        if (json.length === 0) return;
+        let keys = Object.keys(json[0]);
+
+        // header
+        append(resultsTable, keys.map(k => dom('th', k)).reduce(append, dom('tr')));
+
+        // rows
+        const makeRow = (acc, row) =>
+        append(acc,
+            keys.map(k => dom('td', row[k])).reduce(append, dom('tr'))
+        );
+        json.reduce(makeRow, resultsTable);
+      }
+      
+    </script>
+  </body>
+</html>

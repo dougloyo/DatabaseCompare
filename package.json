@@ -1,0 +1,17 @@
+{
+  "name": "sdcoe-datacomp",
+  "version": "1.0.0",
+  "description": "Simple application that compares data from 2 sources.",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mssql": "^6.2.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "MSDF Douglas Loyo & SCDOE John Watson",
+  "license": "Apache-2.0"
+}
