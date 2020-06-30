@@ -31,6 +31,7 @@
 
   <body>
     <h1>Data Comparrison</h1>
+    <button onclick="reRun()">ReRun</button>
     <table id="resultsTable">
     </table>
     <!-- <script src="js/scripts.js"></script> -->
@@ -69,6 +70,15 @@
             keys.map(k => dom('td', row[k])).reduce(append, dom('tr'))
         );
         json.reduce(makeRow, resultsTable);
+      }
+
+      function reRun()
+      {
+
+        fetch('/api/execute')
+        .then(data=>data.json())
+        .then(jsonData=>populate(jsonData))
+        .catch(e=>{ console.log(e); });
       }
       
     </script>
