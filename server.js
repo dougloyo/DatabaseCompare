@@ -1,8 +1,7 @@
 var express = require('express');
 var path = require("path");
 var fs = require('fs');
-var sqlSrc = require("mssql");
-var sqlDest = require("mssql");
+var sql = require("mssql");
 
 // Load the manifest to know Src and Dest
 let manifest = JSON.parse(fs.readFileSync('manifest.json'));
@@ -22,16 +21,29 @@ app.get('/api/execute', async(req, res) => {
 
     try {
         // make sure that any items are correctly URL encoded in the connection string
-        await sqlSrc.connect(manifest.SrcDb);
-        await sqlDest.connect(manifest.DestDb);
+        let destPool = new sql.ConnectionPool(manifest.DestDb);
+        let srcPool = new sql.ConnectionPool(manifest.SrcDb);
+
+        let destConn = destPool.connect();
+        let srcConn = srcPool.connect();
+
+        await destConn;
+        await srcConn;
 
         for(let i=0; i<manifest.ComparrisonsToRun.length; i++) {
             let compFile = manifest.ComparrisonsToRun[i];
             let comp = JSON.parse(fs.readFileSync(`Comps/${compFile}`));
 
             //console.log(comp.SrcSQL);
-            let srcResult = await sqlSrc.query(comp.SrcSQL);
-            let destResult = await sqlDest.query(comp.DestSQL);
+            const srcRequest = srcPool.request(); // or: new sql.Request(pool1)
+            const srcResult = await srcRequest.query(comp.SrcSQL);
+
+            const destRequest = destPool.request(); // or: new sql.Request(pool1)
+            const destResult = await destRequest.query(comp.DestSQL);
+
+            //let tResult = await sqlSrc.query("SELECT StudentUSI, FirstName from edfi.Student");
+            console.log(srcResult.recordsets);
+            console.log(destResult.recordsets);
 
             var resu = { 
                 Comp:comp.Name, 
@@ -64,7 +76,7 @@ function evalScalarsAreEqual(srcRecordsets, destRecordsets) {
 
     var key = Object.keys(src)[0];
     
-    return src[key]===dest[key];
+    return (src[key]===dest[key])?"true":"<span style='color:red;'>false</span>";
 }
 
 var server = app.listen(5000, function () {
