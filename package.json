@@ -5,7 +5,8 @@
   "main": "server.js",
   "dependencies": {
     "express": "^4.17.1",
-    "mssql": "^6.2.0"
+    "mssql": "^6.2.0",
+    "mustache": "^4.0.1"
   },
   "devDependencies": {},
   "scripts": {

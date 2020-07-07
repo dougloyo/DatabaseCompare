@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
+    <script src="lib/mustache/mustache.min.js"></script>
     <title>Comparrison</title>
 
     <!-- <link rel="stylesheet" href="css/main.css" /> -->
@@ -77,10 +77,55 @@
 
         fetch('/api/execute')
         .then(data=>data.json())
-        .then(jsonData=>populate(jsonData))
+        //.then(jsonData=>populate(jsonData))
+        .then(json=>renderResutls(json))
         .catch(e=>{ console.log(e); });
+
+        
       }
       
     </script>
+
+
+<div id="target">Loading...</div>
+<script id="template" type="x-tmpl-mustache">
+  <h2>{{time}}</h2>
+  <table>
+    <thead>
+      <tr>
+        {{#headers}}
+        <th>{{.}}</th>
+        {{/headers}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#rows}}
+      <tr>
+        <td>{{Comp}}</td>
+        <td>{{Source}}</td>
+        <td>{{Destination}}</td>
+      </tr>
+      {{/rows}}
+    </tbody>
+  </table>  
+</script>
+<script>
+  fetch('/api/execute')
+        .then(data=>data.json())
+        .then(jsonData=>renderResutls(jsonData))
+        .catch(e=>{ console.log(e); });
+
+  /* Mustache binding */
+  function renderResutls(jsonModel) {
+    var template = document.getElementById('template').innerHTML;
+    var viewmodel = { 
+      "headers":['a','b','c'],
+      "rows" : jsonModel,
+      "time": new Date()
+    };
+    var rendered = Mustache.render(template, viewmodel);
+    document.getElementById('target').innerHTML = rendered;
+  }
+</script>
   </body>
 </html>

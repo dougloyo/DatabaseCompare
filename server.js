@@ -10,9 +10,7 @@ var app = express();
 
 // ::Web Server Endpoints::
 // Serve the HTML page that will get the results.
-app.get('/', function(req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'));
-});
+app.use(express.static(__dirname+'/public'));
 
 // The api call that will execute the process and return JSON
 app.get('/api/execute', async(req, res) => {
