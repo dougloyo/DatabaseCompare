@@ -77,6 +77,21 @@ app.get('/api/execute', async(req, res) => {
     res.send(results);
 });
 
+app.get('/api/test', async(req, res) => {
+    
+    // make sure that any items are correctly URL encoded in the connection string
+    let destPool = new sql.ConnectionPool(manifest.DestDb);
+    let destConn = destPool.connect();
+
+    await destConn;
+
+    const destRequest = destPool.request(); // or: new sql.Request(pool1)
+    const destResult = await destRequest.query("SELECT StudentUSI, StudentUniqueId, FirstName FROM edfi.Student");
+    console.log(destResult);
+    
+    res.send(destResult);
+});
+
 function getScalar(recordsets){
     // For scalar values like counts you have to select the first recordset and then first object.
     var recordset = recordsets[0][0];
