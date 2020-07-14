@@ -42,11 +42,11 @@ app.get('/api/execute', async(req, res) => {
 
         await destConn;
         await srcConn;
-
+        console.log(manifest);
         for(let i=0; i<manifest.ComparisonsToRun.length; i++) {
             let compFile = manifest.ComparisonsToRun[i];
 			// console.log(fldrJSONCompareDefns+`/Comparisons/${compFile}`);
-            let comp = JSON.parse(fs.readFileSync(fldrJSONCompareDefns+`/Comparisons/${compFile}`));
+            let comp = JSON.parse(fs.readFileSync(`${fldrJSONCompareDefns}/Comparisons/${compFile}`));
 
             //console.log(comp.SrcSQL);
             const srcRequest = srcPool.request(); // or: new sql.Request(pool1)

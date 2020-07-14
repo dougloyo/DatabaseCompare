@@ -122,7 +122,7 @@
   function renderResults(jsonModel) {
     var template = document.getElementById('template').innerHTML;
     var viewmodel = { 
-      "headers":['Comparison Type','Source','Target','Is Same?'],
+      "headers":Object.keys(jsonModel[0]),
       "rows" : jsonModel,
       "lastruntime": new Date()
     };

@@ -1,5 +1,5 @@
 {
     "SrcDb":{"server": "localhost", "user": "sa", "password": "1qaz2wsx", "database": "v3.4.0_Sandbox_EdFi_Ods_Populated_Template"},
     "DestDb":{"server": "localhost", "user": "sa", "password": "1qaz2wsx", "database": "v3.3.0_Sandbox_EdFi_Ods_Populated_Template"},
-    "ComparrisonsToRun":["1students.json","2staff.json"]
+    "ComparisonsToRun":["1students.json","2staff.json"]
 }
