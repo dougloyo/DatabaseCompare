@@ -1,0 +1,5 @@
+{
+    "Name":"Section Count",
+    "SrcSQL":"SELECT Count(*) SectionCount FROM edfi.Section;",
+    "DestSQL":"SELECT Count(*) SectionCount FROM edfi.Section;"
+}

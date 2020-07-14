@@ -1,0 +1,6 @@
+{
+    "SrcDb":{"server": "localhost", "user": "sa", "password": "password19.", "database": "EdFi_Ods_MinTpt_32"},
+    "DestDb":{"server": "localhost", "user": "sa", "password": "password19.", "database": "EdFi_Ods_MinTpt_32"},
+    "ComparisonsToRun":["1schools.json","2students.json","3staff.json","4sections.json","5studentsections.json"]
+}
+

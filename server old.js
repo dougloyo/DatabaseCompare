@@ -5,17 +5,9 @@ var fs = require('fs');
 var sql = require("mssql");
 
 // Notify Application of Comparison Logic/SQL Set to use (This will identify folder with json)
-// Default - CompsSingleODS
-var fldrJSONCompareDefns = "CompsSingleODS";	// eg: CompsSingleODS, CompsSynergy
-// Command line arguments
-for (let j = 0; j < process.argv.length; j++) {
-    console.log(j + ' -> ' + (process.argv[j]));
-	if ( j == 2 ) {
-		// console.log('IF = 2');
-		fldrJSONCompareDefns = process.argv[2];
-	}
-}
-console.log(fldrJSONCompareDefns);
+// !!!! JW: Might replace with managed table of options
+const fldrJSONCompareDefns = "CompsSingleODS";	// eg: CompsSingleODS, CompsSynergy
+
 
 // Load the manifest to know Src and Dest
 let manifest = JSON.parse(fs.readFileSync(fldrJSONCompareDefns+'/manifest.json'));
@@ -45,8 +37,7 @@ app.get('/api/execute', async(req, res) => {
 
         for(let i=0; i<manifest.ComparisonsToRun.length; i++) {
             let compFile = manifest.ComparisonsToRun[i];
-			// console.log(fldrJSONCompareDefns+`/Comparisons/${compFile}`);
-            let comp = JSON.parse(fs.readFileSync(fldrJSONCompareDefns+`/Comparisons/${compFile}`));
+            let comp = JSON.parse(fs.readFileSync(`Comps`+fldrJSONCompareDefns+`/Comparison/${compFile}`));
 
             //console.log(comp.SrcSQL);
             const srcRequest = srcPool.request(); // or: new sql.Request(pool1)

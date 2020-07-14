@@ -37,7 +37,6 @@
     <!-- <script src="js/scripts.js"></script> -->
     <script>
 
-/*
       const resultsTable = document.getElementById('resultsTable');
 
       fetch('/api/execute')
@@ -72,7 +71,6 @@
         );
         json.reduce(makeRow, resultsTable);
       }
-*/
 
       function reRun()
       {
@@ -80,7 +78,7 @@
         fetch('/api/execute')
         .then(data=>data.json())
         //.then(jsonData=>populate(jsonData))
-        .then(json=>renderResults(json))
+        .then(json=>renderResutls(json))
         .catch(e=>{ console.log(e); });
 
         
@@ -91,7 +89,7 @@
 
 <div id="target">Loading...</div>
 <script id="template" type="x-tmpl-mustache">
-  <h2>{{lastruntime}}</h2>
+  <h2>{{time}}</h2>
   <table>
     <thead>
       <tr>
@@ -106,7 +104,6 @@
         <td>{{Comp}}</td>
         <td>{{Source}}</td>
         <td>{{Destination}}</td>
-        <td>{{AreEqual}}</td>
       </tr>
       {{/rows}}
     </tbody>
@@ -115,16 +112,16 @@
 <script>
   fetch('/api/execute')
         .then(data=>data.json())
-        .then(jsonData=>renderResults(jsonData))
+        .then(jsonData=>renderResutls(jsonData))
         .catch(e=>{ console.log(e); });
 
   /* Mustache binding */
-  function renderResults(jsonModel) {
+  function renderResutls(jsonModel) {
     var template = document.getElementById('template').innerHTML;
     var viewmodel = { 
-      "headers":['Comparison Type','Source','Target','Is Same?'],
+      "headers":['a','b','c'],
       "rows" : jsonModel,
-      "lastruntime": new Date()
+      "time": new Date()
     };
     var rendered = Mustache.render(template, viewmodel);
     document.getElementById('target').innerHTML = rendered;
