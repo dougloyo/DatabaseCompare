@@ -103,23 +103,27 @@ app.get('/api/testarrays', async(req, res) => {
     // 3) Find the ones that are in the SRC but not in DEST
     // 4) Find the ones that are in the DEST but not in SRC
 
+    // Could be one column key like Id or could be a composit key.
+    var uniqueKey = ['studentUSI', 'schoolId'];
     var src = [
-        {studentUSI:1, name:"John", other:"value"},
-        {studentUSI:2, name:"Doug", other:"value"},
-        {studentUSI:3, name:"Mary", other:"value"}]; //Exists only in src
-
+        {studentUSI:1, schoolId:10, name:"John", other:"value"},
+        {studentUSI:2, schoolId:10, name:"Doug", other:"value"},
+        {studentUSI:2, schoolId:12, name:"Doug", other:"value"}, // Different key (Only exists in src)
+        {studentUSI:3, schoolId:10, name:"Mary", other:"value"}]; //Exists only in src
+ 
     var dest = [
-        {studentUSI:1, name:"John", other:"value"}, //Same
-        {studentUSI:2, name:"Dougl", other:"value"}, // Different name
-        {studentUSI:4, name:"Kris", other:"value"}]; // Exists only in dest
+        {studentUSI:1, schoolId:10, name:"John", other:"value"}, //Same
+        {studentUSI:2, schoolId:10, name:"Dougl", other:"value"}, // Different name
+        {studentUSI:2, schoolId:11, name:"Doug", other:"value"}, // Different Key (Only exists in dest)
+        {studentUSI:4, schoolId:10, name:"Kris", other:"value"}]; // Exists only in dest
 
     // Prep response model
-    var resultModel = compareObjectArrays(src,dest);
+    var resultModel = compareObjectArrays(src,dest,uniqueKey);
     
     res.send(resultModel);
 });
 
-function compareObjectArrays(arrA,arrB)
+function compareObjectArrays(arrA,arrB,uniqueKey)
 {
     var model = {
         rowCountSame: arrA.length === arrB.length,
@@ -131,10 +135,9 @@ function compareObjectArrays(arrA,arrB)
     // Iterate over the src first.
     arrA.forEach( (elementA) => {
         // Assumption: the first col is the key.
-        // TODO: Implement multiple keys: Easy to do with more composite keys? Maybe? LOL
         var aKeys = Object.keys(elementA);
 
-        var bResultsArr = arrB.filter(b=> b[Object.keys(b)[0]]===elementA[aKeys[0]]);
+        var bResultsArr = arrB.filter(b=> uniqueKey.every(k=> valueIsEqual(elementA, b, k)));
         // We found the element based on the key
         if(bResultsArr.length > 0) {
             var elementB = bResultsArr[0];
@@ -142,7 +145,7 @@ function compareObjectArrays(arrA,arrB)
             if(!objectsAreEqual(elementA,elementB))
                 model.diffs.push({src:elementA, dest:elementB});
             // lets remove from the existisInDestButNotInSrc
-            model.existisInDestButNotInSrc = model.existisInDestButNotInSrc.filter(e=>e[Object.keys(e)[0]]!==elementB[Object.keys(elementB)[0]]);
+            model.existisInDestButNotInSrc = model.existisInDestButNotInSrc.filter(e=> !uniqueKey.every(k=> valueIsEqual(e, elementB, k)));
         }
         else { // Row not in destination.
             model.existisInSrcButNotInDest.push(elementA);
@@ -150,6 +153,11 @@ function compareObjectArrays(arrA,arrB)
     });
 
     return model;
+}
+
+function valueIsEqual(objA, objB, key)
+{
+    return objA[key]===objB[key];
 }
 
 function objectsAreEqual(a,b)
