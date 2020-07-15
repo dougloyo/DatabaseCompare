@@ -92,6 +92,71 @@ app.get('/api/test', async(req, res) => {
     res.send(destResult);
 });
 
+app.get('/api/testarrays', async(req, res) => {
+    
+    // Assumptions:
+    //  -- The key for each row in the array is the first column
+
+    // Requirements:
+    // 1) If all are equal Awesome. Do nothing =)
+    // 2) If different then save for UI to process
+    // 3) Find the ones that are in the SRC but not in DEST
+    // 4) Find the ones that are in the DEST but not in SRC
+
+    var src = [
+        {studentUSI:1, name:"John", other:"value"},
+        {studentUSI:2, name:"Doug", other:"value"},
+        {studentUSI:3, name:"Mary", other:"value"}]; //Exists only in src
+
+    var dest = [
+        {studentUSI:1, name:"John", other:"value"}, //Same
+        {studentUSI:2, name:"Dougl", other:"value"}, // Different name
+        {studentUSI:4, name:"Kris", other:"value"}]; // Exists only in dest
+
+    // Prep response model
+    var resultModel = compareObjectArrays(src,dest);
+    
+    res.send(resultModel);
+});
+
+function compareObjectArrays(arrA,arrB)
+{
+    var model = {
+        rowCountSame: arrA.length === arrB.length,
+        diffs:[],
+        existisInSrcButNotInDest:[],
+        existisInDestButNotInSrc:arrB, // Addigning to remove the ones we find.
+    };
+    
+    // Iterate over the src first.
+    arrA.forEach( (elementA) => {
+        // Assumption: the first col is the key.
+        // TODO: Implement multiple keys: Easy to do with more composite keys? Maybe? LOL
+        var aKeys = Object.keys(elementA);
+
+        var bResultsArr = arrB.filter(b=> b[Object.keys(b)[0]]===elementA[aKeys[0]]);
+        // We found the element based on the key
+        if(bResultsArr.length > 0) {
+            var elementB = bResultsArr[0];
+            // Are they equal?
+            if(!objectsAreEqual(elementA,elementB))
+                model.diffs.push({src:elementA, dest:elementB});
+            // lets remove from the existisInDestButNotInSrc
+            model.existisInDestButNotInSrc = model.existisInDestButNotInSrc.filter(e=>e[Object.keys(e)[0]]!==elementB[Object.keys(elementB)[0]]);
+        }
+        else { // Row not in destination.
+            model.existisInSrcButNotInDest.push(elementA);
+        }
+    });
+
+    return model;
+}
+
+function objectsAreEqual(a,b)
+{
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
 function getScalar(recordsets){
     // For scalar values like counts you have to select the first recordset and then first object.
     var recordset = recordsets[0][0];
