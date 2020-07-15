@@ -105,7 +105,7 @@ function evalScalarsAreEqual(srcRecordsets, destRecordsets) {
 
     var key = Object.keys(src)[0];
     
-    return (src[key]===dest[key])?"true":"<span style='color:red;'>false</span>";
+    return (src[key]===dest[key]);
 }
 
 var server = app.listen(5000, function () {

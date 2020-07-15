@@ -106,7 +106,12 @@
         <td>{{Comp}}</td>
         <td>{{Source}}</td>
         <td>{{Destination}}</td>
-        <td>{{AreEqual}}</td>
+        {{#AreEqual}}
+          <td style="text-align:center;">{{AreEqual}}</td>
+        {{/AreEqual}}
+        {{^AreEqual}}
+          <td style='text-align:center; background-color:pink; font-weight:bold'>{{AreEqual}}</td>
+        {{/AreEqual}}
       </tr>
       {{/rows}}
     </tbody>
@@ -120,6 +125,7 @@
 
   /* Mustache binding */
   function renderResults(jsonModel) {
+    console.log(jsonModel);
     var template = document.getElementById('template').innerHTML;
     var viewmodel = { 
       "headers":Object.keys(jsonModel[0]),
