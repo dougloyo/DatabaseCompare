@@ -55,6 +55,26 @@ app.get('/api/execute', async(req, res) => {
             const destRequest = destPool.request(); // or: new sql.Request(pool1)
             const destResult = await destRequest.query(comp.DestSQL);
 
+            // TODO: Change this to better nicer logic????
+            // Maybe make some external functions to not have all this code in here.
+            var diffModel = {};
+            if(comp.DetailKeys) {
+                const destDetailRequest = destPool.request(); // or: new sql.Request(pool1)
+                const destDetailResult = await destDetailRequest.query(comp.DestSQLDetail);
+                const ddArray=destDetailResult.recordsets[0];
+
+                const srcDetailRequest = srcPool.request(); // or: new sql.Request(pool1)
+                const srcDetailResult = await srcDetailRequest.query(comp.SrcSQLDetail);
+                const sdArray = srcDetailResult.recordsets[0];
+
+                //console.log(ddArray);
+                //console.log(sdArray);
+                //var arrA = sdArray.slice(0,5); // Just get the first 5 rows =)
+                //var arrB = ddArray.slice(0,5);
+                diffModel = compareObjectArrays(sdArray,ddArray,comp.DetailKeys);
+                console.log(diffModel);
+            }
+
             //let tResult = await sqlSrc.query("SELECT StudentUSI, FirstName from edfi.Student");
             console.log(srcResult.recordsets);
             console.log(destResult.recordsets);
@@ -63,7 +83,8 @@ app.get('/api/execute', async(req, res) => {
                 Comp:comp.Name, 
                 Source:getScalar(srcResult.recordsets), 
                 Destination:getScalar(destResult.recordsets),
-                AreEqual: evalScalarsAreEqual(srcResult.recordsets,destResult.recordsets)
+                AreEqual: evalScalarsAreEqual(srcResult.recordsets,destResult.recordsets),
+                DiffModel: diffModel
             };
 
             results.push(resu); 
@@ -138,6 +159,7 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
         var aKeys = Object.keys(elementA);
 
         var bResultsArr = arrB.filter(b=> uniqueKey.every(k=> valueIsEqual(elementA, b, k)));
+
         // We found the element based on the key
         if(bResultsArr.length > 0) {
             var elementB = bResultsArr[0];

@@ -1,5 +1,8 @@
 {
     "Name":"Student Count",
     "SrcSQL":"SELECT Count(*) StudentCount FROM edfi.Student;",
-    "DestSQL":"SELECT Count(*) StudentCount FROM edfi.Student;"
+    "DestSQL":"SELECT Count(*) StudentCount FROM edfi.Student;",
+    "DetailKeys":["StudentUSI"],
+    "SrcSQLDetail": "SELECT StudentUSI, FirstName, LastSurname, MiddleName FROM edfi.Student;",
+    "DestSQLDetail": "SELECT StudentUSI, FirstName, LastSurname, MiddleName FROM edfi.Student;"
 }
