@@ -40,13 +40,25 @@ app.get('/api/execute', async(req, res) => {
         let destConn = destPool.connect();
         let srcConn = srcPool.connect();
 
+        // Execute Counts
+
         await destConn;
         await srcConn;
         console.log(manifest);
         for(let i=0; i<manifest.ComparisonsToRun.length; i++) {
             let compFile = manifest.ComparisonsToRun[i];
-			// console.log(fldrJSONCompareDefns+`/Comparisons/${compFile}`);
+            // console.log(fldrJSONCompareDefns+`/Comparisons/${compFile}`);
+
+            // TODO: let comparrisonMetadata = 
             let comp = JSON.parse(fs.readFileSync(`${fldrJSONCompareDefns}/Comparisons/${compFile}`));
+
+            // TODO: Call counts function
+            // var counts = executeCounts(comp, destConn, srcConn);
+
+            // TODO: Call detail comparrisons
+            // var detials = executeDetails(comp, destConn, srcConn);
+
+            // var responseModel = { counts: counts, details: detials };
 
             //console.log(comp.SrcSQL);
             const srcRequest = srcPool.request(); // or: new sql.Request(pool1)
