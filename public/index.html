@@ -86,6 +86,37 @@
         
       }
       
+      function JsonToHtml(src,dest = null){
+          var jsonHtml = "<span>{</span><br/>";
+          if(!dest){
+            if(src && typeof src == 'object'){
+              for(var key in src){
+                jsonHtml += "&nbsp;&nbsp;&nbsp;&nbsp;";
+                if(src[key] !== null)
+                  jsonHtml += "<span>" + "\"" + key + "\"" + ": " + src[key] + "</span><br/>";
+                else
+                  jsonHtml += "<span>" + "\"" + key + "\"" + ": \" \"</span><br/>";
+              }
+            }
+          }
+          else{
+            if(src && dest && typeof src == 'object' && typeof dest == 'object'){
+              for(var key in dest){
+                jsonHtml += "&nbsp;&nbsp;&nbsp;&nbsp;";
+                if(dest[key] != null){
+                  if(dest[key] == src[key])
+                    jsonHtml += "<span>" + "\"" + key + "\"" + ": " + dest[key] + "</span><br/>";
+                  else
+                    jsonHtml += "<span style='background-color:pink;'>" + "\"" + key + "\"" + ": " + dest[key] + "</span><br/>";
+                }
+                else
+                  jsonHtml += "<span>" + "\"" + key + "\"" + ": \" \"</span><br/>";
+              }
+            }
+          }
+          jsonHtml += "<span>}</span>";
+          return jsonHtml;
+      }
     </script>
 
 
@@ -117,6 +148,26 @@
     </tbody>
   </table>  
 </script>
+<script id="diffTemplate" type="x-tmpl-mustache">
+  <table>
+    <thead>
+      <tr>
+        {{#headers}}
+        <th>{{.}}</th>
+        {{/headers}}
+      </tr>
+    </thead>
+    <tbody>
+      {{#rows}}
+      <tr>
+        <td>{{Comp}}</td>
+        <td><div>{{{ Source }}}</div></td>
+        <td><div>{{{ Destination }}}</div></td>
+      </tr>
+      {{/rows}}
+    </tbody>
+  </table>  
+</script>
 <script>
   fetch('/api/execute')
         .then(data=>data.json())
@@ -124,37 +175,6 @@
         .catch(e=>{ console.log(e); });
 
   /* Mustache binding */
-  function JsonToHtml(src,dest = null){
-      var jsonHtml = "<span>{</span><br/>";
-      if(!dest){
-        if(src && typeof src == 'object'){
-          for(var key in src){
-            jsonHtml += "&nbsp;&nbsp;&nbsp;&nbsp;";
-            if(src[key] !== null)
-              jsonHtml += "<span>" + "\"" + key + "\"" + ": " + src[key] + "</span><br/>";
-            else
-              jsonHtml += "<span>" + "\"" + key + "\"" + ": \" \"</span><br/>";
-          }
-        }
-      }
-      else{
-        if(src && dest && typeof src == 'object' && typeof dest == 'object'){
-          for(var key in dest){
-            jsonHtml += "&nbsp;&nbsp;&nbsp;&nbsp;";
-            if(dest[key] != null){
-              if(dest[key] == src[key])
-                jsonHtml += "<span>" + "\"" + key + "\"" + ": " + dest[key] + "</span><br/>";
-              else
-                jsonHtml += "<span style='background-color:pink;'>" + "\"" + key + "\"" + ": " + dest[key] + "</span><br/>";
-            }
-            else
-              jsonHtml += "<span>" + "\"" + key + "\"" + ": \" \"</span><br/>";
-          }
-        }
-      }
-      jsonHtml += "<span>}</span>";
-      return jsonHtml;
-  }
   function renderResults(jsonModel) {
     var diffObject = JSON.parse(JSON.stringify(jsonModel));
     var currentKeys = Object.keys(jsonModel[0]).filter(key => key != "DiffModel");
