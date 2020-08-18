@@ -4,18 +4,18 @@ var path = require("path");
 var fs = require('fs');
 var sql = require("mssql");
 
-// Notify Application of Comparison Logic/SQL Set to use (This will identify folder with json)
-// Default - CompsSingleODS
-var fldrJSONCompareDefns = "CompsSingleODS";	// eg: CompsSingleODS, CompsSynergy
 // Command line arguments
-for (let j = 0; j < process.argv.length; j++) {
-    console.log(j + ' -> ' + (process.argv[j]));
-	if ( j == 2 ) {
-		// console.log('IF = 2');
-		fldrJSONCompareDefns = process.argv[2];
-	}
+// command line: npm start --comparisonsDirectory=CompsSingleODS
+GetArgValue = (argName) => {
+    const arg = process.argv.find(value => value.includes(argName));
+    return arg ? arg.split('=')[1] : "CompsSingleODS"; 
 }
-console.log(fldrJSONCompareDefns);
+
+// Notify Application of Comparison Logic/SQL Set to use (This will identify folder with json)
+// eg: CompsSingleODS, CompsSynergy
+// Default - CompsSingleODS
+const fldrJSONCompareDefns = GetArgValue("comparisonsDirectory");
+
 
 // Load the manifest to know Src and Dest
 let manifest = JSON.parse(fs.readFileSync(fldrJSONCompareDefns+'/manifest.json'));
@@ -26,6 +26,30 @@ var app = express();
 // Serve the HTML page that will get the results.
 // JW 7-6-2020: Addition to support public folder within project
 app.use(express.static(__dirname+'/public'));
+
+//Function to execute MsSQL queries.
+ExecuteSql = (connectionString,query,params = null) => {
+    return sql.connect(connectionString).then((connection) => {
+        const dbRequest = new sql.Request();
+        if(params){
+            params.forEach(param => { 
+                dbRequest.input(param.name, param.type, param.value);
+            });
+        }
+        return dbRequest.query(query).then(sqlResult => {
+            connection.close();
+            const sqlResponse = sqlResult && sqlResult.recordsets[0];
+            return sqlResponse;
+        }).catch( (error) => {
+            console.log(error);
+            connection.close();
+            return null;
+        });
+    }).catch((error) => {
+        console.log(error);
+        return null;
+    }); 
+}
 
 // The api call that will execute the process and return JSON
 app.get('/api/execute', async(req, res) => {
@@ -44,62 +68,47 @@ app.get('/api/execute', async(req, res) => {
 
         await destConn;
         await srcConn;
-        console.log(manifest);
+        
         for(let i=0; i<manifest.ComparisonsToRun.length; i++) {
             let compFile = manifest.ComparisonsToRun[i];
             // console.log(fldrJSONCompareDefns+`/Comparisons/${compFile}`);
-
+            
             // TODO: let comparrisonMetadata = 
             let comp = JSON.parse(fs.readFileSync(`${fldrJSONCompareDefns}/Comparisons/${compFile}`));
 
-            // TODO: Call counts function
-            // var counts = executeCounts(comp, destConn, srcConn);
-
-            // TODO: Call detail comparrisons
-            // var detials = executeDetails(comp, destConn, srcConn);
-
-            // var responseModel = { counts: counts, details: detials };
-
-            //console.log(comp.SrcSQL);
-            const srcRequest = srcPool.request(); // or: new sql.Request(pool1)
-            const srcResult = await srcRequest.query(comp.SrcSQL);
-
-            const destRequest = destPool.request(); // or: new sql.Request(pool1)
-            const destResult = await destRequest.query(comp.DestSQL);
-
-            // TODO: Change this to better nicer logic????
-            // Maybe make some external functions to not have all this code in here.
             var diffModel = {};
+            let sourceRows = [];
+            let destinationRows = [] ;
             if(comp.DetailKeys) {
-                const destDetailRequest = destPool.request(); // or: new sql.Request(pool1)
-                const destDetailResult = await destDetailRequest.query(comp.DestSQLDetail);
-                const ddArray=destDetailResult.recordsets[0];
+                
+                const sourcePromise = ExecuteSql(manifest.DestDb,comp.DestSQLDetail);
+                await sourcePromise.then(sqlRows => {
+                    // Rows from soruce database
+                    destinationRows = sqlRows;
+                }).catch(error =>{
+                    console.log(error);
+                })
 
-                const srcDetailRequest = srcPool.request(); // or: new sql.Request(pool1)
-                const srcDetailResult = await srcDetailRequest.query(comp.SrcSQLDetail);
-                const sdArray = srcDetailResult.recordsets[0];
+                const destinationPromise = ExecuteSql(manifest.SrcDb,comp.SrcSQLDetail);
+                await destinationPromise.then(sqlRows => {
+                    // Rows from destination database
+                    sourceRows = sqlRows;
+                }).catch(error =>{
+                    console.log(error);
+                })
 
-                //console.log(ddArray);
-                //console.log(sdArray);
-                //var arrA = sdArray.slice(0,5); // Just get the first 5 rows =)
-                //var arrB = ddArray.slice(0,5);
-                diffModel = compareObjectArrays(sdArray,ddArray,comp.DetailKeys);
-                console.log(diffModel);
+                diffModel = compareObjectArrays(sourceRows,destinationRows,comp.DetailKeys);
             }
 
-            //let tResult = await sqlSrc.query("SELECT StudentUSI, FirstName from edfi.Student");
-            console.log(srcResult.recordsets);
-            console.log(destResult.recordsets);
-
-            var resu = { 
+            var result = { 
                 Comp:comp.Name, 
-                Source:getScalar(srcResult.recordsets), 
-                Destination:getScalar(destResult.recordsets),
-                AreEqual: evalScalarsAreEqual(srcResult.recordsets,destResult.recordsets),
+                Source: `${comp.CountName}:${sourceRows.length}`, 
+                Destination:`${comp.CountName}:${destinationRows.length}`,
+                AreEqual: diffModel.areEqual,
                 DiffModel: diffModel
             };
 
-            results.push(resu); 
+            results.push(result); 
         }
             
     } catch (err) {
@@ -110,52 +119,6 @@ app.get('/api/execute', async(req, res) => {
     res.send(results);
 });
 
-app.get('/api/test', async(req, res) => {
-    
-    // make sure that any items are correctly URL encoded in the connection string
-    let destPool = new sql.ConnectionPool(manifest.DestDb);
-    let destConn = destPool.connect();
-
-    await destConn;
-
-    const destRequest = destPool.request(); // or: new sql.Request(pool1)
-    const destResult = await destRequest.query("SELECT StudentUSI, StudentUniqueId, FirstName FROM edfi.Student");
-    console.log(destResult);
-    
-    res.send(destResult);
-});
-
-app.get('/api/testarrays', async(req, res) => {
-    
-    // Assumptions:
-    //  -- The key for each row in the array is the first column
-
-    // Requirements:
-    // 1) If all are equal Awesome. Do nothing =)
-    // 2) If different then save for UI to process
-    // 3) Find the ones that are in the SRC but not in DEST
-    // 4) Find the ones that are in the DEST but not in SRC
-
-    // Could be one column key like Id or could be a composit key.
-    var uniqueKey = ['studentUSI', 'schoolId'];
-    var src = [
-        {studentUSI:1, schoolId:10, name:"John", other:"value"},
-        {studentUSI:2, schoolId:10, name:"Doug", other:"value"},
-        {studentUSI:2, schoolId:12, name:"Doug", other:"value"}, // Different key (Only exists in src)
-        {studentUSI:3, schoolId:10, name:"Mary", other:"value"}]; //Exists only in src
- 
-    var dest = [
-        {studentUSI:1, schoolId:10, name:"John", other:"value"}, //Same
-        {studentUSI:2, schoolId:10, name:"Dougl", other:"value"}, // Different name
-        {studentUSI:2, schoolId:11, name:"Doug", other:"value"}, // Different Key (Only exists in dest)
-        {studentUSI:4, schoolId:10, name:"Kris", other:"value"}]; // Exists only in dest
-
-    // Prep response model
-    var resultModel = compareObjectArrays(src,dest,uniqueKey);
-    
-    res.send(resultModel);
-});
-
 function compareObjectArrays(arrA,arrB,uniqueKey)
 {
     var model = {
@@ -163,6 +126,7 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
         diffs:[],
         existisInSrcButNotInDest:[],
         existisInDestButNotInSrc:arrB, // Addigning to remove the ones we find.
+        areEqual : false
     };
     
     // Iterate over the src first.
@@ -171,7 +135,6 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
         var aKeys = Object.keys(elementA);
 
         var bResultsArr = arrB.filter(b=> uniqueKey.every(k=> valueIsEqual(elementA, b, k)));
-
         // We found the element based on the key
         if(bResultsArr.length > 0) {
             var elementB = bResultsArr[0];
@@ -185,7 +148,7 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
             model.existisInSrcButNotInDest.push(elementA);
         }
     });
-
+    model.areEqual == model.diffs.length == 0 && model.existisInSrcButNotInDest.length == 0 && model.existisInDestButNotInSrc.length == 0;
     return model;
 }
 
@@ -206,13 +169,14 @@ function getScalar(recordsets){
     return `${keys[0]}:${recordset[keys[0]]}`;
 }
 
-function evalScalarsAreEqual(srcRecordsets, destRecordsets) {
-    var src = srcRecordsets[0][0];
-    var dest = destRecordsets[0][0];
-
-    var key = Object.keys(src)[0];
-    
-    return (src[key]===dest[key]);
+function evalScalarsAreEqual(sourceRows, destinationRows) {
+    var src = sourceRows[0];
+    var dest = destinationRows[0];
+    if(src){
+        var key = Object.keys(src)[0];
+        return src[key]===dest[key];
+    }
+    return false;
 }
 
 var server = app.listen(5000, function () {
