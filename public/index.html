@@ -115,6 +115,11 @@
           jsonHtml += "<span>}</span>";
           return jsonHtml;
       }
+
+      function ShowTable(tableName, show = false){
+        const table = document.getElementById(`Tbl_${tableName}`);
+        table.style.display = !show? "none" : "block";
+      }
     </script>
 
 
@@ -139,8 +144,9 @@
           <td style="text-align:center;">{{AreEqual}}</td>
         {{/AreEqual}}
         {{^AreEqual}}
-          <td style='text-align:center; background-color:pink; font-weight:bold'>{{AreEqual}}</td>
+          <td style='text-align:center; background-color:pink; font-weight:bold'><a title="Click here to get {{ Table }} differences" href="#" onclick="ShowTable('{{ Table }}', true);return false;">{{AreEqual}}</a></td>
         {{/AreEqual}}
+        <td>{{ Differences }}</td>
       </tr>
       {{/rows}}
     </tbody>
@@ -174,8 +180,7 @@
 
   /* Mustache binding */
   function renderResults(jsonModel) {
-    var diffObject = JSON.parse(JSON.stringify(jsonModel));
-    var currentKeys = Object.keys(jsonModel[0]).filter(key => key != "DiffModel");
+    var currentKeys = Object.keys(jsonModel[0]).filter(key => key != "DiffModel" && key != "Table");
     //First table that only compare if equal
     var template = document.getElementById('template').innerHTML;
     var viewmodel = { 
@@ -186,8 +191,8 @@
     var rendered = Mustache.render(template, viewmodel);
     document.getElementById('target').innerHTML = rendered;
     //Second table  row differences
-    var notEqualRows = []; 
-    diffObject.forEach(object => {
+    jsonModel.forEach(object => {
+      var notEqualRows = []; 
       if(!object.AreEqual && object.DiffModel.diffs){
           object.DiffModel.diffs.forEach(row => {
             notEqualRows.push({
@@ -210,17 +215,19 @@
               Destination: "<div style='text-align:center; width: 100%;'><span style='background-color:pink;'>Not in destination</span></div>" 
             });
           });
+          currentKeys = Object.keys(notEqualRows[0]);
+          viewmodel = { 
+            "headers":currentKeys,
+            "rows" : notEqualRows,
+            "lastruntime": new Date()
+          };
+          template = document.getElementById('diffTemplate').innerHTML;
+          rendered = Mustache.render(template, viewmodel);
+          document.getElementById('target').innerHTML += `<div id='Tbl_${object.Table}'><br/><h3>${ object.Table } Differences in both databases</h3>` +
+            `<a href="#" onclick="ShowTable('${object.Table}', false);return false;">Hide ${ object.Table } table</a><br/><br/>` + rendered + "</div>";
+          document.getElementById(`Tbl_${object.Table}`).style.display = "none";
       }
     });
-    currentKeys = Object.keys(notEqualRows[0]).filter(key => key != "Order");
-    viewmodel = { 
-      "headers":currentKeys,
-      "rows" : notEqualRows,
-      "lastruntime": new Date()
-    };
-    template = document.getElementById('diffTemplate').innerHTML;
-    rendered = Mustache.render(template, viewmodel);
-    document.getElementById('target').innerHTML += "<br/><h3>Databases Differences</h3><br/>" + rendered;
   }
 </script>
   </body>

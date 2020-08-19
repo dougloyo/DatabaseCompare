@@ -57,17 +57,6 @@ app.get('/api/execute', async(req, res) => {
     let results = [];
 
     try {
-        // make sure that any items are correctly URL encoded in the connection string
-        let destPool = new sql.ConnectionPool(manifest.DestDb);
-        let srcPool = new sql.ConnectionPool(manifest.SrcDb);
-
-        let destConn = destPool.connect();
-        let srcConn = srcPool.connect();
-
-        // Execute Counts
-
-        await destConn;
-        await srcConn;
         
         for(let i=0; i<manifest.ComparisonsToRun.length; i++) {
             let compFile = manifest.ComparisonsToRun[i];
@@ -80,31 +69,40 @@ app.get('/api/execute', async(req, res) => {
             let sourceRows = [];
             let destinationRows = [] ;
             if(comp.DetailKeys) {
+                if(manifest.DestDb,comp.DestSQLDetail){
+                    const destinationPromise = ExecuteSql(manifest.DestDb,comp.DestSQLDetail);
+                    await destinationPromise.then(sqlRows => {
+                        // Detail rows from soruce database
+                        destinationRows = sqlRows;
+                    }).catch(error =>{
+                        console.log(error);
+                    });
+                }
+                else
+                    console.log("There is not destination detail query in the manifest");
                 
-                const sourcePromise = ExecuteSql(manifest.DestDb,comp.DestSQLDetail);
-                await sourcePromise.then(sqlRows => {
-                    // Rows from soruce database
-                    destinationRows = sqlRows;
-                }).catch(error =>{
-                    console.log(error);
-                })
-
-                const destinationPromise = ExecuteSql(manifest.SrcDb,comp.SrcSQLDetail);
-                await destinationPromise.then(sqlRows => {
-                    // Rows from destination database
-                    sourceRows = sqlRows;
-                }).catch(error =>{
-                    console.log(error);
-                })
+                if(manifest.SrcDb,comp.SrcSQLDetail){
+                    const sourcePromise = ExecuteSql(manifest.SrcDb,comp.SrcSQLDetail);
+                    await sourcePromise.then(sqlRows => {
+                        // Source rows from destination database
+                        sourceRows = sqlRows;
+                    }).catch(error =>{
+                        console.log(error);
+                    });
+                }
+                else
+                    console.log("There is not source detail query in the manifest");
 
                 diffModel = compareObjectArrays(sourceRows,destinationRows,comp.DetailKeys);
             }
 
             var result = { 
                 Comp:comp.Name, 
+                Table : comp.TableName,
                 Source: `${comp.CountName}:${sourceRows.length}`, 
                 Destination:`${comp.CountName}:${destinationRows.length}`,
                 AreEqual: diffModel.areEqual,
+                Differences: diffModel.diffrenceString,
                 DiffModel: diffModel
             };
 
@@ -126,7 +124,8 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
         diffs:[],
         existisInSrcButNotInDest:[],
         existisInDestButNotInSrc:arrB, // Addigning to remove the ones we find.
-        areEqual : false
+        areEqual : true,
+        diffrenceString : "",
     };
     
     // Iterate over the src first.
@@ -148,7 +147,17 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
             model.existisInSrcButNotInDest.push(elementA);
         }
     });
-    model.areEqual == model.diffs.length == 0 && model.existisInSrcButNotInDest.length == 0 && model.existisInDestButNotInSrc.length == 0;
+    if(model.diffs.length > 0 || model.existisInSrcButNotInDest.length || model.existisInDestButNotInSrc.length){
+        model.diffrenceString += "There is ";
+        model.diffrenceString += model.diffs.length > 0 ? `${ model.diffs.length } differences in both databases` : "";
+        if(model.diffrenceString != "" && model.existisInSrcButNotInDest.length > 0)
+            model.diffrenceString += " and ";
+        model.diffrenceString += model.existisInSrcButNotInDest.length > 0 ? `${ model.existisInSrcButNotInDest.length } more records in source database` : "";
+        if(model.diffrenceString != "" && model.existisInDestButNotInSrc.length > 0)
+            model.diffrenceString += " and ";
+        model.diffrenceString += model.existisInDestButNotInSrc.length > 0 ? `${ model.existisInDestButNotInSrc.length } more records in destination database` : "";   
+    }
+    model.areEqual = model.diffrenceString == "";
     return model;
 }
 
