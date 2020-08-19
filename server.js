@@ -31,7 +31,7 @@ app.use(express.static(__dirname+'/public'));
 ExecuteSql = (connectionString,query,params = null) => {
     return sql.connect(connectionString).then((connection) => {
         const dbRequest = new sql.Request();
-        if(params){
+        if(params) {
             params.forEach(param => { 
                 dbRequest.input(param.name, param.type, param.value);
             });
@@ -68,37 +68,32 @@ app.get('/api/execute', async(req, res) => {
             var diffModel = {};
             let sourceRows = [];
             let destinationRows = [] ;
+
             if(comp.DetailKeys) {
                 if(manifest.DestDb,comp.DestSQLDetail){
-                    const destinationPromise = ExecuteSql(manifest.DestDb,comp.DestSQLDetail);
-                    await destinationPromise.then(sqlRows => {
+                    await ExecuteSql(manifest.DestDb,comp.DestSQLDetail).then(sqlRows => {
                         // Detail rows from soruce database
                         destinationRows = sqlRows;
-                    }).catch(error =>{
-                        console.log(error);
-                    });
+                    }).catch(error =>{ console.log(error); });
                 }
                 else
                     console.log("There is not destination detail query in the manifest");
                 
                 if(manifest.SrcDb,comp.SrcSQLDetail){
-                    const sourcePromise = ExecuteSql(manifest.SrcDb,comp.SrcSQLDetail);
-                    await sourcePromise.then(sqlRows => {
+                    await ExecuteSql(manifest.SrcDb,comp.SrcSQLDetail).then(sqlRows => {
                         // Source rows from destination database
                         sourceRows = sqlRows;
-                    }).catch(error =>{
-                        console.log(error);
-                    });
+                    }).catch(error =>{ console.log(error); });
                 }
                 else
                     console.log("There is not source detail query in the manifest");
 
                 diffModel = compareObjectArrays(sourceRows,destinationRows,comp.DetailKeys);
-            }
+            } else { console.log("There is no primary key to base the comparrison on."); }
 
             var result = { 
-                Comp:comp.Name, 
-                Table : comp.TableName,
+                Comp: comp.Name, 
+                Table: comp.TableName,
                 Source: `${comp.CountName}:${sourceRows.length}`, 
                 Destination:`${comp.CountName}:${destinationRows.length}`,
                 AreEqual: diffModel.areEqual,
@@ -134,9 +129,11 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
         var aKeys = Object.keys(elementA);
 
         var bResultsArr = arrB.filter(b=> uniqueKey.every(k=> valueIsEqual(elementA, b, k)));
+        
         // We found the element based on the key
         if(bResultsArr.length > 0) {
             var elementB = bResultsArr[0];
+            
             // Are they equal?
             if(!objectsAreEqual(elementA,elementB))
                 model.diffs.push({src:elementA, dest:elementB});
@@ -147,17 +144,11 @@ function compareObjectArrays(arrA,arrB,uniqueKey)
             model.existisInSrcButNotInDest.push(elementA);
         }
     });
-    if(model.diffs.length > 0 || model.existisInSrcButNotInDest.length || model.existisInDestButNotInSrc.length){
-        model.diffrenceString += "There is ";
-        model.diffrenceString += model.diffs.length > 0 ? `${ model.diffs.length } differences in both databases` : "";
-        if(model.diffrenceString != "" && model.existisInSrcButNotInDest.length > 0)
-            model.diffrenceString += " and ";
-        model.diffrenceString += model.existisInSrcButNotInDest.length > 0 ? `${ model.existisInSrcButNotInDest.length } more records in source database` : "";
-        if(model.diffrenceString != "" && model.existisInDestButNotInSrc.length > 0)
-            model.diffrenceString += " and ";
-        model.diffrenceString += model.existisInDestButNotInSrc.length > 0 ? `${ model.existisInDestButNotInSrc.length } more records in destination database` : "";   
-    }
-    model.areEqual = model.diffrenceString == "";
+    model.diffrenceString += "Diffs: " + model.diffs.length;
+    model.diffrenceString += ", InSrcNotInDest: " + model.existisInSrcButNotInDest.length;
+    model.diffrenceString += ", InDestNotInSrc: " + model.existisInDestButNotInSrc.length;
+
+    model.areEqual = model.diffs.length==0 && model.existisInSrcButNotInDest.length==0 && model.existisInDestButNotInSrc.length==0;
     return model;
 }
 

@@ -1,0 +1,8 @@
+{    
+    "Name":"Student Detail",
+    "CountName" : "Rows",
+    "TableName" : "StudentDet",
+    "DetailKeys":["FirstName","LastSurname","MiddleName"],
+    "SrcSQLDetail": "SELECT PersonalTitlePrefix,FirstName,MiddleName,LastSurname,GenerationCodeSuffix,MaidenName,BirthDate,BirthCity,BirthStateAbbreviationDescriptorId,BirthInternationalProvince,BirthCountryDescriptorId,DateEnteredUS,MultipleBirthStatus,CitizenshipStatusDescriptorId,StudentUniqueId FROM edfi.Student;",
+    "DestSQLDetail": "SELECT PersonalTitlePrefix,FirstName,MiddleName,LastSurname,GenerationCodeSuffix,MaidenName,BirthDate,BirthCity,BirthStateAbbreviationDescriptorId,BirthInternationalProvince,BirthCountryDescriptorId,DateEnteredUS,MultipleBirthStatus,CitizenshipStatusDescriptorId,StudentUniqueId FROM edfi.Student;"
+}

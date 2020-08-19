@@ -175,7 +175,7 @@
 <script>
   fetch('/api/execute')
         .then(data=>data.json())
-        .then(jsonData=>renderResults(jsonData))
+        .then(jsonData=>{renderResults(jsonData);console.log(jsonData)})
         .catch(e=>{ console.log(e); });
 
   /* Mustache binding */

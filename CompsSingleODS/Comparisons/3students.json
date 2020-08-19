@@ -1,0 +1,8 @@
+{    
+    "Name":"StaffCount",
+    "CountName" : "Rows",
+    "TableName" : "StaCount",
+    "DetailKeys":["Rows"],
+    "SrcSQLDetail": "SELECT COUNT(*) Rows FROM edfi.Staff;",
+    "DestSQLDetail": "SELECT COUNT(*) Rows FROM edfi.Staff;"
+}
