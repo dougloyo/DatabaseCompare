@@ -4,7 +4,7 @@
   "description": "Simple application that compares data from 2 sources.",
   "main": "server.js",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "mssql": "^6.2.0",
     "mustache": "^4.0.1"
   },
